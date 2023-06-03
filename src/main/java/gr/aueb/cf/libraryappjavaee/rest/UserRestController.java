@@ -1,10 +1,13 @@
 package gr.aueb.cf.libraryappjavaee.rest;
 
+import gr.aueb.cf.libraryappjavaee.dto.BookDTO;
 import gr.aueb.cf.libraryappjavaee.dto.UserDTO;
+import gr.aueb.cf.libraryappjavaee.model.Book;
 import gr.aueb.cf.libraryappjavaee.model.User;
 import gr.aueb.cf.libraryappjavaee.service.IUserService;
 import gr.aueb.cf.libraryappjavaee.service.exceptions.EntityAlreadyExistsException;
 import gr.aueb.cf.libraryappjavaee.service.exceptions.EntityNotFoundException;
+import gr.aueb.cf.libraryappjavaee.service.util.JPAHelper;
 import jakarta.persistence.NoResultException;
 
 import javax.inject.Inject;
@@ -12,6 +15,7 @@ import javax.ws.rs.*;
 import javax.ws.rs.core.*;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
 
 @Path("/users")
@@ -30,7 +34,7 @@ public class UserRestController {
             users = service.getUsersByUsername(username);
             List<UserDTO> userDTOs = new ArrayList<>();
             for (User user : users) {
-                userDTOs.add( map(user) );
+                userDTOs.add(map(user));
             }
             return Response.status(Response.Status.OK).entity(userDTOs).build();
         } catch (EntityNotFoundException e) {
@@ -49,7 +53,7 @@ public class UserRestController {
             users = service.getAllUsers();
             List<UserDTO> userDTOs = new ArrayList<>();
             for (User user : users) {
-                userDTOs.add( map(user) );
+                userDTOs.add(map(user));
             }
             return Response.status(Response.Status.OK).entity(userDTOs).build();
         } catch (EntityNotFoundException e) {
@@ -129,6 +133,7 @@ public class UserRestController {
         userDTO.setPassword(user.getPassword());
         userDTO.setFirstname(user.getFirstname());
         userDTO.setLastname(user.getLastname());
+        userDTO.setRentedBooks(user.getRentedBooks());
         return userDTO;
     }
 
@@ -138,12 +143,30 @@ public class UserRestController {
     @Produces(MediaType.APPLICATION_JSON)
     public Response validateUser(@QueryParam("username") String username,
                                  @QueryParam("password") String password) {
-       boolean validated;
+        boolean validated;
         try {
             validated = service.isUserValid(username, password);
             return Response.status(Response.Status.OK).entity("Validated: " + validated).build();
-       }catch (EntityNotFoundException | NoResultException e) {
-           return Response.status(Response.Status.NOT_FOUND).entity("User with username " + username + " was not found").build();
-       }
+        } catch (EntityNotFoundException | NoResultException e) {
+            return Response.status(Response.Status.NOT_FOUND).entity("User with username " + username + " was not found").build();
+        }
     }
+
+    //TODO fix this.
+    @Path("/{id}/addBook")
+    @PUT
+    @Produces(MediaType.APPLICATION_JSON)
+    @Consumes(MediaType.APPLICATION_JSON)
+    public Response userAddBook(@PathParam("id") Long id, BookDTO bookDTO) {
+        User user;
+        try {
+            user = service.getUserById(id);
+            service.addBook(user, bookDTO);
+            user = service.getUserById(id);
+            return Response.status(Response.Status.OK).entity(user).build();
+        } catch (EntityNotFoundException e) {
+            return Response.status(Response.Status.NOT_FOUND).entity("User with id " + id + " was not found").build();
+        }
+    }
+
 }

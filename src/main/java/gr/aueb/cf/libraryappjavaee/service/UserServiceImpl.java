@@ -1,12 +1,16 @@
 package gr.aueb.cf.libraryappjavaee.service;
+import gr.aueb.cf.libraryappjavaee.dao.BookDAOImpl;
+import gr.aueb.cf.libraryappjavaee.dao.IBookDAO;
 import gr.aueb.cf.libraryappjavaee.dao.IUserDAO;
+import gr.aueb.cf.libraryappjavaee.dto.BookDTO;
 import gr.aueb.cf.libraryappjavaee.dto.UserDTO;
+import gr.aueb.cf.libraryappjavaee.model.Author;
+import gr.aueb.cf.libraryappjavaee.model.Book;
 import gr.aueb.cf.libraryappjavaee.model.User;
 import gr.aueb.cf.libraryappjavaee.service.exceptions.EntityAlreadyExistsException;
 import gr.aueb.cf.libraryappjavaee.service.exceptions.EntityNotFoundException;
 import gr.aueb.cf.libraryappjavaee.service.util.JPAHelper;
 import gr.aueb.cf.libraryappjavaee.service.util.LoggerUtil;
-import jakarta.persistence.NoResultException;
 import org.mindrot.jbcrypt.BCrypt;
 
 import javax.enterprise.context.RequestScoped;
@@ -14,6 +18,7 @@ import javax.inject.Inject;
 import javax.ws.rs.BadRequestException;
 import javax.ws.rs.ext.Provider;
 import java.util.List;
+import java.util.Set;
 
 @Provider
 @RequestScoped
@@ -21,6 +26,7 @@ public class UserServiceImpl implements IUserService{
 
     @Inject
     private IUserDAO dao;
+
 
     @Override
     public User insert(UserDTO dto) throws EntityAlreadyExistsException {
@@ -135,8 +141,8 @@ public class UserServiceImpl implements IUserService{
                     "Get user by id rollback, id " + id + " not found");
             throw e;
         } finally {
-        JPAHelper.closeEntityManager();
-    }
+            JPAHelper.closeEntityManager();
+        }
         return user;
     }
 
@@ -157,6 +163,8 @@ public class UserServiceImpl implements IUserService{
             JPAHelper.rollbackTransaction();
             LoggerUtil.getCurrentLogger().warning("Error in validation - User with username "+ username + " not found");
             throw e;
+        } finally {
+            JPAHelper.closeEntityManager();
         }
     }
 
@@ -200,4 +208,30 @@ public class UserServiceImpl implements IUserService{
         return users;
     }
 
+    public void addBook(User user, BookDTO bookDTO) {
+        //check if book with the same title already exists.
+        IBookDAO bookDAO = new BookDAOImpl();
+        Book book = bookDAO.getBookByTitle(bookDTO.getTitle());
+
+        if (book == null) {
+            book = new Book();
+            book.setNumberOfCopies(bookDTO.getNumberOfCopies());
+            book.setTitle(bookDTO.getTitle());
+            book.setAuthor(bookDTO.getAuthor());
+        }
+        try {
+            JPAHelper.beginTransaction();
+
+            user.addBook(book);
+            //book.addRenter(user);
+            dao.update(user);  //return updated user
+
+            JPAHelper.commitTransaction();
+        } catch (Exception e) {
+            JPAHelper.rollbackTransaction();
+            LoggerUtil.getCurrentLogger().warning("Add book error - rollback");
+        } finally {
+            JPAHelper.closeEntityManager();
+        }
+    }
 }

@@ -23,8 +23,11 @@ public class UserDAOImpl implements IUserDAO{
     @Override
     public User update(User user) {
         EntityManager em = JPAHelper.getEntityManager();
-        em.merge(user);
-        return em.find(User.class, user.getId());  // will return user before update if operation fails
+        User userToUpdate = em.find(User.class, user.getId());
+        if (userToUpdate != null) {
+            return em.merge(user);
+        }
+        return null;
     }
 
     @Override

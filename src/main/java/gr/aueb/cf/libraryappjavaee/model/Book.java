@@ -1,15 +1,13 @@
 package gr.aueb.cf.libraryappjavaee.model;
-
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
-
+import lombok.*;
 import java.util.HashSet;
 import java.util.Set;
 
 @Entity
-@Data
+@Getter     //In manyToMany relation it seems that there s a conflict when in both side entities @Data is used, in one i side i had to add @Getter, @Setter instead of @Data
+@Setter
 @AllArgsConstructor
 @NoArgsConstructor
 @Table(name = "BOOKS")
@@ -20,17 +18,22 @@ public class Book {
     @GeneratedValue(strategy = GenerationType.AUTO)
     private Long id;
 
-    @Column(name = "TITLE")
+    @Column(name = "TITLE", unique = true)
     private String title;
 
     @Column(name = "NUMBER_OF_COPIES")
     private int numberOfCopies;
 
-    @ManyToOne(fetch = FetchType.LAZY, cascade = CascadeType.ALL)
-    @JoinColumn(name = "AUTHOR_FK", nullable = false)
-    private Author author;
+//    @ManyToOne(fetch = FetchType.EAGER, cascade = CascadeType.ALL)
+//    @JoinColumn(name = "AUTHOR_FK" )
+//    private Author author;
+    @Column(name = "AUTHOR")
+    private String author;
 
-    @ManyToMany(mappedBy = "rentedBooks")
+
+    //TODO fetch type should be eager, fix this
+    @JsonIgnore
+    @ManyToMany(mappedBy = "rentedBooks", fetch = FetchType.EAGER,cascade = CascadeType.ALL)
     private Set<User> rentByUser = new HashSet<>();
 
     public void decreaseNumberOfCopies() {
@@ -38,26 +41,37 @@ public class Book {
             numberOfCopies--;
         }
     }
-
+    //todo number of copies
     public void increaseNumberOfCopies(){
         numberOfCopies++;
     }
 
     public void addRenter(User user) {
-        this.rentByUser.add(user);
-
-        for (Book book : user.getRentedBooks()) {
-            if (book == this) {
+        for (User u : rentByUser) {
+            if (u.getUsername().equals(user.getUsername())) {
                 return;
             }
         }
+        this.rentByUser.add(user);
         user.addBook(this);
     }
 
     public void removeRenter(User user) {
-        this.rentByUser.remove(user);
-        if (user.getRentedBooks().contains(this)) {
-            user.removeBook(this);
+        for (User u : rentByUser) {
+            if (u.getUsername().equals(user.getUsername())) {
+                rentByUser.remove(user);
+                user.removeBook(this);
+            }
         }
+    }
+
+    @Override
+    public String toString() {
+        return "Book{" +
+                "id=" + id +
+                ", title='" + title + '\'' +
+                ", numberOfCopies=" + numberOfCopies +
+                ", author='" + author + '\'' +
+                '}';
     }
 }

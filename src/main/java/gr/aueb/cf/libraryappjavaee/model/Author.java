@@ -28,8 +28,8 @@ public class Author {
     @OneToMany (mappedBy = "author")
     private Set<Book> books = new HashSet<>();
 
-    public void addBook(Book book) {
-        this.books.add(book);
-        book.setAuthor(this);
-    }
+//    public void addBook(Book book) {
+//        this.books.add(book);
+//        book.setAuthor(this);
+//    }
 }

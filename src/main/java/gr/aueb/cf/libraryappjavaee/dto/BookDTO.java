@@ -16,10 +16,10 @@ import java.util.Set;
 public class BookDTO {
 
     private Long id;
-
+    private String title;
     private int numberOfCopies;
+    private String author;
+    //private Author author;
 
-    private Author author;
-
-    private Set<User> rentByUser = new HashSet<>();
+    //private Set<User> rentByUser = new HashSet<>();
 }

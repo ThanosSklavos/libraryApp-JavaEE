@@ -1,10 +1,6 @@
 package gr.aueb.cf.libraryappjavaee.model;
-
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
-
+import lombok.*;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -32,7 +28,8 @@ public class User {
     @Column(name = "PASSWORD")
     private String password;
 
-    @ManyToMany(fetch = FetchType.LAZY, cascade = CascadeType.ALL)
+    //TODO fetch type should by eager, fix this
+    @ManyToMany(fetch = FetchType.EAGER, cascade = CascadeType.ALL)
     @JoinTable(name = "USER_BOOK",
             joinColumns = @JoinColumn(name = "USER_ID", referencedColumnName = "ID"),
             inverseJoinColumns = @JoinColumn(name = "BOOK_ID", referencedColumnName = "ID"))
@@ -46,21 +43,21 @@ public class User {
     }
 
     public void addBook(Book book) {
-        this.rentedBooks.add(book);
-
-        for (User user : book.getRentByUser()) {
-            if (user == this) {
+        for (Book b : rentedBooks) {
+            if (b.getTitle().equals(book.getTitle())) {
                 return;
             }
         }
+        this.rentedBooks.add(book);
         book.addRenter(this);
     }
 
     public void removeBook(Book book) {
-        this.rentedBooks.remove(book);
-
-        if (book.getRentByUser().contains(this)) {
-            book.removeRenter(this);
+        for (Book b : rentedBooks) {
+            if (b.getTitle().equals(book.getTitle())) {
+                rentedBooks.remove(book);
+                book.removeRenter(this);
+            }
         }
     }
 }

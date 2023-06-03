@@ -20,4 +20,6 @@ public class AuthorDTO {
     private String lastname;
 
     private Set<Book> books = new HashSet<>();
+
+    //TODO implement author in db
 }

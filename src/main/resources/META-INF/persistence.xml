@@ -14,6 +14,9 @@
             <property name="hibernate.connection.username" value="admin" />
             <property name="hibernate.connection.password" value="admin" />
             <property name="hibernate.hbm2ddl.auto" value="update" />
+
+            <!--insertion after Multiple representations of the same entity are being merged error. -->
+            <property name="hibernate.event.merge.entity_copy_observer" value="allow"/>
         </properties>
     </persistence-unit>
 
