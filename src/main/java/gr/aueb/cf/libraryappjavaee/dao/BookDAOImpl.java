@@ -1,5 +1,6 @@
 package gr.aueb.cf.libraryappjavaee.dao;
 import gr.aueb.cf.libraryappjavaee.model.Book;
+import gr.aueb.cf.libraryappjavaee.model.User;
 import gr.aueb.cf.libraryappjavaee.service.util.JPAHelper;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.NoResultException;
@@ -39,7 +40,7 @@ public class BookDAOImpl implements IBookDAO{
     @Override
     public Book getById(Long id) {
         EntityManager em = JPAHelper.getEntityManager();
-        return em.find(Book.class, id); // will return null user if operation fails
+        return em.find(Book.class, id); // will return null book if operation fails
     }
 
     @Override
@@ -50,5 +51,27 @@ public class BookDAOImpl implements IBookDAO{
             return em.merge(book);
         }
         return null;
+    }
+
+    @Override
+    public Book insert(Book book) {
+        EntityManager em = JPAHelper.getEntityManager();
+        em.persist(book);
+        return em.find(Book.class, book.getId());  // will return null book if operation fails
+    }
+
+    @Override
+    public Book delete(Long id) {
+        EntityManager em = JPAHelper.getEntityManager();
+        Book bookToDelete = em.find(Book.class, id);
+        em.remove(bookToDelete);
+        return bookToDelete; // will return null Book if operation fails
+    }
+
+    @Override
+    public List<Book> getAllBooks() {
+        EntityManager em = JPAHelper.getEntityManager();
+        TypedQuery<Book> query = em.createQuery("SELECT b FROM Book b", Book.class);
+        return query.getResultList(); // will return empty list if operation finds nothing
     }
 }

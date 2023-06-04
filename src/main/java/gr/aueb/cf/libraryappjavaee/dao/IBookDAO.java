@@ -8,4 +8,10 @@ public interface IBookDAO {
     Book getBookByTitle(String title);
     Book getById(Long id);
     Book update(Book book);
+
+    Book insert(Book book);
+
+    Book delete(Long id);
+
+    List<Book> getAllBooks();
 }

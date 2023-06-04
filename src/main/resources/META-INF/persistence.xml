@@ -17,6 +17,7 @@
 
             <!--insertion after Multiple representations of the same entity are being merged error. -->
             <property name="hibernate.event.merge.entity_copy_observer" value="allow"/>
+
         </properties>
     </persistence-unit>
 
