@@ -35,4 +35,20 @@ public class BookDAOImpl implements IBookDAO{
 
         }
     }
+
+    @Override
+    public Book getById(Long id) {
+        EntityManager em = JPAHelper.getEntityManager();
+        return em.find(Book.class, id); // will return null user if operation fails
+    }
+
+    @Override
+    public Book update(Book book) {
+        EntityManager em = JPAHelper.getEntityManager();
+        Book bookToUpdate = em.find(Book.class, book.getId());
+        if (bookToUpdate != null) {
+            return em.merge(book);
+        }
+        return null;
+    }
 }

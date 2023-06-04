@@ -57,6 +57,7 @@ public class User {
             if (b.getTitle().equals(book.getTitle())) {
                 rentedBooks.remove(book);
                 book.removeRenter(this);
+                break;
             }
         }
     }

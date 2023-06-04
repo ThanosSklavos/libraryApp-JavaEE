@@ -1,14 +1,12 @@
 package gr.aueb.cf.libraryappjavaee.service;
-import gr.aueb.cf.libraryappjavaee.dao.BookDAOImpl;
 import gr.aueb.cf.libraryappjavaee.dao.IBookDAO;
 import gr.aueb.cf.libraryappjavaee.dao.IUserDAO;
-import gr.aueb.cf.libraryappjavaee.dto.BookDTO;
 import gr.aueb.cf.libraryappjavaee.dto.UserDTO;
-import gr.aueb.cf.libraryappjavaee.model.Author;
 import gr.aueb.cf.libraryappjavaee.model.Book;
 import gr.aueb.cf.libraryappjavaee.model.User;
 import gr.aueb.cf.libraryappjavaee.service.exceptions.EntityAlreadyExistsException;
 import gr.aueb.cf.libraryappjavaee.service.exceptions.EntityNotFoundException;
+import gr.aueb.cf.libraryappjavaee.service.exceptions.OutOfStockException;
 import gr.aueb.cf.libraryappjavaee.service.util.JPAHelper;
 import gr.aueb.cf.libraryappjavaee.service.util.LoggerUtil;
 import org.mindrot.jbcrypt.BCrypt;
@@ -18,7 +16,7 @@ import javax.inject.Inject;
 import javax.ws.rs.BadRequestException;
 import javax.ws.rs.ext.Provider;
 import java.util.List;
-import java.util.Set;
+import java.util.Objects;
 
 @Provider
 @RequestScoped
@@ -26,6 +24,10 @@ public class UserServiceImpl implements IUserService{
 
     @Inject
     private IUserDAO dao;
+    @Inject
+    private IBookDAO bookDAO;
+    @Inject
+    private IBookService bookService;
 
 
     @Override
@@ -168,24 +170,6 @@ public class UserServiceImpl implements IUserService{
         }
     }
 
-    private User map(UserDTO dto) {
-        User user = new User();
-        user.setId(dto.getId());
-        user.setUsername(dto.getUsername());
-        user.setLastname(dto.getLastname());
-        user.setFirstname(dto.getFirstname());
-        user.setPassword(hashPassword(dto.getPassword()));
-        return user;
-    }
-
-    private String hashPassword(String password) {
-        int workload = 12;
-        String salt = BCrypt.gensalt(workload);
-        return BCrypt.hashpw(password, salt);
-    }
-
-
-    /* Test Features*/
     @Override
     public List<User> getAllUsers() throws EntityNotFoundException {
         List<User> users;
@@ -208,30 +192,101 @@ public class UserServiceImpl implements IUserService{
         return users;
     }
 
-    public void addBook(User user, BookDTO bookDTO) {
-        //check if book with the same title already exists.
-        IBookDAO bookDAO = new BookDAOImpl();
-        Book book = bookDAO.getBookByTitle(bookDTO.getTitle());
-
-        if (book == null) {
-            book = new Book();
-            book.setNumberOfCopies(bookDTO.getNumberOfCopies());
-            book.setTitle(bookDTO.getTitle());
-            book.setAuthor(bookDTO.getAuthor());
-        }
+    @Override
+    public void addBook(Long userID, Long bookID)
+            throws EntityAlreadyExistsException, EntityNotFoundException, OutOfStockException {
         try {
             JPAHelper.beginTransaction();
 
+            User user = dao.getById(userID);
+            Book book = bookDAO.getById(bookID);
+
+            if (user == null) {
+                throw new EntityNotFoundException(User.class, userID);
+            }
+            if (book == null) {
+                throw new EntityNotFoundException(Book.class, bookID);
+            }
+
+            for (Book b : user.getRentedBooks()) {
+                if (Objects.equals(b.getId(), book.getId())) {
+                    throw new EntityAlreadyExistsException(Book.class, book.getId());
+                }
+            }
+            bookService.decreaseNumberOfCopies(book);
+            //book = bookDAO.update(book);   // not needed cause of cascade in relationship
+
             user.addBook(book);
-            //book.addRenter(user);
             dao.update(user);  //return updated user
 
             JPAHelper.commitTransaction();
-        } catch (Exception e) {
+        } catch (EntityNotFoundException | EntityAlreadyExistsException | OutOfStockException e) {
             JPAHelper.rollbackTransaction();
-            LoggerUtil.getCurrentLogger().warning("Add book error - rollback");
+            LoggerUtil.getCurrentLogger().warning("Add book error - rollback. " + e.getMessage());
+            throw e;
         } finally {
             JPAHelper.closeEntityManager();
         }
     }
+
+    @Override
+    public void removeBook(Long userID, Long bookID) throws EntityNotFoundException {
+        boolean bookFound = false;
+
+        try {
+            JPAHelper.beginTransaction();
+
+            User user = dao.getById(userID);
+            Book book = bookDAO.getById(bookID);
+
+            if (user == null) {
+                throw new EntityNotFoundException(User.class, userID);
+            }
+            if (book == null) {
+                throw new EntityNotFoundException(Book.class, bookID);
+            }
+
+            for (Book b : user.getRentedBooks()) {
+                if (Objects.equals(b.getId(), book.getId())) {
+                    user.removeBook(book);
+                    book.increaseNumberOfCopies();
+                    bookFound = true;
+                    break;
+                }
+            }
+            if (!bookFound) {
+                throw new EntityNotFoundException(Book.class, book.getId());
+            }
+
+            dao.update(user);
+
+            JPAHelper.commitTransaction();
+        } catch (EntityNotFoundException e) {
+            JPAHelper.rollbackTransaction();
+            LoggerUtil.getCurrentLogger().warning("Add book error - rollback. " + e.getMessage());
+            throw e;
+        } finally {
+            JPAHelper.closeEntityManager();
+        }
+    }
+
+    private User map(UserDTO dto) {
+        User user = new User();
+        user.setId(dto.getId());
+        user.setUsername(dto.getUsername());
+        user.setLastname(dto.getLastname());
+        user.setFirstname(dto.getFirstname());
+        user.setPassword(hashPassword(dto.getPassword()));
+        return user;
+    }
+
+    private String hashPassword(String password) {
+        int workload = 12;
+        String salt = BCrypt.gensalt(workload);
+        return BCrypt.hashpw(password, salt);
+    }
+
+
+    /* Test Features*/
+
 }

@@ -36,11 +36,6 @@ public class Book {
     @ManyToMany(mappedBy = "rentedBooks", fetch = FetchType.EAGER,cascade = CascadeType.ALL)
     private Set<User> rentByUser = new HashSet<>();
 
-    public void decreaseNumberOfCopies() {
-        if (numberOfCopies > 0) {
-            numberOfCopies--;
-        }
-    }
     //todo number of copies
     public void increaseNumberOfCopies(){
         numberOfCopies++;
@@ -61,6 +56,7 @@ public class Book {
             if (u.getUsername().equals(user.getUsername())) {
                 rentByUser.remove(user);
                 user.removeBook(this);
+                break;
             }
         }
     }
