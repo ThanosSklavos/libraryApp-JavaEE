@@ -28,7 +28,6 @@ public class User {
     @Column(name = "PASSWORD")
     private String password;
 
-    //TODO fetch type should by eager, fix this
     @ManyToMany(fetch = FetchType.EAGER, cascade = CascadeType.ALL)
     @JoinTable(name = "USER_BOOK",
             joinColumns = @JoinColumn(name = "USER_ID", referencedColumnName = "ID"),

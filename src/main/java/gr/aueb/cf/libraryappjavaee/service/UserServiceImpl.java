@@ -132,6 +132,7 @@ public class UserServiceImpl implements IUserService{
         try {
             JPAHelper.beginTransaction();
             user = dao.getById(id);
+
             if (user == null) {
                 throw new EntityNotFoundException(User.class, id);
             }

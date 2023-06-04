@@ -8,6 +8,10 @@ import jakarta.persistence.*;
 import java.util.HashSet;
 import java.util.Set;
 
+
+/**
+ * Not implemented yet.
+ */
 @Entity
 @NoArgsConstructor
 @AllArgsConstructor

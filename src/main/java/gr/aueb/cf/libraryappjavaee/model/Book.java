@@ -30,13 +30,10 @@ public class Book {
     @Column(name = "AUTHOR")
     private String author;
 
-
-    //TODO fetch type should be eager, fix this
     @JsonIgnore
     @ManyToMany(mappedBy = "rentedBooks", fetch = FetchType.EAGER,cascade = CascadeType.ALL)
     private Set<User> rentByUser = new HashSet<>();
 
-    //todo number of copies
     public void increaseNumberOfCopies(){
         numberOfCopies++;
     }

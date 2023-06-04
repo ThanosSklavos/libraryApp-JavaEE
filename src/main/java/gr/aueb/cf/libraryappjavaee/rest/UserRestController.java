@@ -63,6 +63,7 @@ public class UserRestController {
         try {
             user = service.getUserById(id);
             UserDTO userDTO = map(user);
+
             return Response.status(Response.Status.OK).entity(userDTO).build();
         } catch (EntityNotFoundException e) {
             return Response.status(Response.Status.NOT_FOUND).entity("User with id " + id + " was not found").build();
@@ -77,6 +78,7 @@ public class UserRestController {
         try {
             User user = service.insert(dto);
             UserDTO userDTO = map(user);
+
             UriBuilder uriBuilder = uriInfo.getAbsolutePathBuilder();
             return Response.created(uriBuilder.path(Long.toString(userDTO.getId())).build())
                     .entity(userDTO).build();
@@ -174,7 +176,7 @@ public class UserRestController {
         UserDTO userDTO = new UserDTO();
         userDTO.setId(user.getId());
         userDTO.setUsername(user.getUsername());
-        userDTO.setPassword(user.getPassword());
+        //userDTO.setPassword(user.getPassword());
         userDTO.setFirstname(user.getFirstname());
         userDTO.setLastname(user.getLastname());
         userDTO.setRentedBooks(user.getRentedBooks());
